@@ -5,6 +5,7 @@ const path = require('path');
 
 const app = express();
 const TERRAFORM_DIR = '/home/ubuntu/Ansible-labs-with-Terraform';
+const WEB_TERMINAL_DIR = '/home/ubuntu/webssh2';
 
 // Example route to test the server
 app.get('/', (req, res) => {
@@ -91,6 +92,20 @@ app.post('/upload-tfstate-to-s3', (req, res) => {
   const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
 
   exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
+    if (err) {
+      return res.status(500).send({ error: err.message, stderr });
+    }
+    res.send({ output: stdout });
+  });
+});
+
+app.listen(3000, () => console.log('Backend API running on port 3000'));
+
+// Launch the web-based terminal
+app.post('/launch-terminal', (req, res) => {
+  const cmd = 'npm start';
+
+  exec(cmd, { cwd: WEB_TERMINAL_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
     if (err) {
       return res.status(500).send({ error: err.message, stderr });
     }
