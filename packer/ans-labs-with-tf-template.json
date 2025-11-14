@@ -43,7 +43,8 @@
 	"provisioners": [{
 		"type": "shell",
 		"scripts": [
-			"install-tools.sh"
+			"install-tools.sh",
+			"configure-access.sh"
 		]
 	}]
 }
