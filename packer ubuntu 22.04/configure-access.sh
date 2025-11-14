@@ -31,6 +31,12 @@ sudo -u ubuntu bash -c "
   
   # Set permissions so only the owner (ubuntu) can read/write the file
   chmod 600 /home/ubuntu/.aws/credentials
+
+  # Create the file with the [default] profile header
+  echo '[default]' > /home/ubuntu/.aws/config  
+
+  # Append the Region
+  echo 'region = eu-west-3' >> /home/ubuntu/.aws/credentials
 "
 
 echo "AWS credentials configured successfully."
