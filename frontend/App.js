@@ -149,6 +149,7 @@ export default function App() {
       {showSshButton && logs && (
         <div className="logs-box">
             <h2>Use these credentails to connect to the machine and start playing with <span style={{color: "red", textDecoration: "underline"}}>Ansible</span></h2>
+            <h3>The username for all the machines is: ec2-user</h3>
             <h3>Master Node</h3>
             <p><strong>Name:</strong> {logs.master.name}</p>
             <p><strong>Public IP:</strong> {logs.master.public_ip}</p>
