@@ -2,6 +2,14 @@ version: "3.9"
 
 services:
 
+  web-based-terminal:
+    container_name: web-based-terminal
+    image: ghcr.io/billchurch/webssh2:latest
+    ports:
+      - "2222:2222"
+    networks:
+      - ans-labs-net
+
   # backend
   backend:
     container_name: backend
