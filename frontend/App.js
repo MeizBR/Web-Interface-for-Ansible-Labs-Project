@@ -9,6 +9,45 @@ export default function App() {
   const [showSshButton, setShowSshButton] = useState(false);
   const [sshUrl, setSshUrl] = useState(ANSIBLE_LAB_URL);
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState(null);
+
+  const uploadTFStateToS3Bucket = async () => {
+    try {
+        const res = await fetch(`${BACKEND_BASE}/upload-tfstate-to-s3`, {
+        method: "POST",
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+        setStatus("File is uploaded to the AWS S3 bucket! 🚀");
+
+        } else {
+        setStatus("Failed to upload the file to AWS S3 bucket ❌");
+        }
+
+    } catch (err) {
+        setStatus("Could not reach backend ❌");
+    }
+  };
+
+  const fetchTerraformLogs = async () => {
+  setStatus("Fetching Terraform logs... ⏳");
+
+  try {
+    const res = await fetch(`${BACKEND_BASE}/test-test`);
+    const data = await res.json();
+
+    if (res.ok) {
+      setLogs(data);
+      setStatus("Terraform logs fetched successfully! 📄");
+    } else {
+      setStatus("Error fetching logs ❌");
+    }
+    } catch (err) {
+        setStatus("Could not reach backend ❌");
+    }
+  };
 
   const launchInfrastructure = async () => {
     setStatus("Launching infrastructure... Please wait ⏳");
@@ -21,6 +60,12 @@ export default function App() {
         setStatus("Infrastructure launched successfully! 🚀");
         // show SSH/button
         setShowSshButton(true);
+
+        // upload TF state to S3 bucket
+        await uploadTFStateToS3Bucket();
+
+        // fetch and show terraform logs
+        await fetchTerraformLogs();
 
         // If backend returns a dynamic URL, use it:
         if (data.ssh_url) {
@@ -99,6 +144,26 @@ export default function App() {
         >
           Access the Ansible lab
         </button>
+      )}
+
+      {showSshButton && logs && (
+        <div className="logs-box">
+            <h2>Use these credentails to connect to the machine and start playing with <span style={{color: "red", textDecoration: "underline"}}>Ansible</span></h2>
+            <h3>Master Node</h3>
+            <p><strong>Name:</strong> {logs.master.name}</p>
+            <p><strong>Public IP:</strong> {logs.master.public_ip}</p>
+            <p><strong>Password:</strong> {logs.master.random_password}</p>
+
+            <h3>Clients</h3>
+            <ul>
+            {logs.clients.map((client, index) => (
+                <li key={index}>{client}</li>
+            ))}
+            </ul>
+
+            <h3>Raw File Output</h3>
+            <pre>{logs.raw}</pre>
+        </div>
       )}
 
       {status && <p className="status">{status}</p>}

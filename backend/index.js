@@ -9,7 +9,7 @@ const TERRAFORM_DIR = '/home/ubuntu/Ansible-labs-with-Terraform';
 const WEB_TERMINAL_DIR = '/home/ubuntu/webssh2';
 
 app.use(cors({
-  origin: 'http://ip:port',
+  origin: '*',
   methods: ['GET', 'POST']
 }));
 
@@ -19,14 +19,48 @@ app.get('/', (req, res) => {
 });
 
 // Test API endpoint
-app.post('/test', (req, res) => {
-  const cmd = 'cat terraform.tfstate';
+app.get('/test', (req, res) => {
+  const cmd = 'cat terraform_logs.txt';
 
   exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
     if (err) {
       return res.status(500).send({ error: err.message, stderr });
     }
     res.send({ output: stdout });
+  });
+});
+
+app.get('/test-test', (req, res) => {
+  const fs = require("fs");
+  const logFile = `${TERRAFORM_DIR}/terraform_logs.txt`;
+
+  fs.readFile(logFile, "utf8", (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Parse the log into a structured payload
+    const response = {
+      master: {},
+      clients: [],
+      raw: data
+    };
+
+    data.split("\n").forEach(line => {
+      if (line.includes("Master Instance Name:"))
+        response.master.name = line.split(":")[1].trim();
+
+      if (line.includes("Master Public IP:"))
+        response.master.public_ip = line.split(":")[1].trim();
+
+      if (line.includes("- client-"))
+        response.clients.push(line.replace("- ", "").trim());
+
+      if (line.includes("Random Password:"))
+        response.master.random_password = line.split(":")[1].trim();
+    });
+
+    res.json(response);
   });
 });
 
