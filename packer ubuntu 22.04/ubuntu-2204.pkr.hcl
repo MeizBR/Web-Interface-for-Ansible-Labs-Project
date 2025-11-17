@@ -72,8 +72,4 @@ build {
         "configure-access.sh"
     ]
   }
-
-  post-processor "virtualbox-export" {
-    output = "ans-labs-with-tf-ubuntu-2204-virtualbox.ova"
-  }
 }

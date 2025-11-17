@@ -2,10 +2,16 @@ const express = require('express');
 const { exec } = require('child_process');
 const { spawn } = require('child_process');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const TERRAFORM_DIR = '/home/ubuntu/Ansible-labs-with-Terraform';
 const WEB_TERMINAL_DIR = '/home/ubuntu/webssh2';
+
+app.use(cors({
+  origin: 'http://ip:port',
+  methods: ['GET', 'POST']
+}));
 
 // Example route to test the server
 app.get('/', (req, res) => {
@@ -99,8 +105,6 @@ app.post('/upload-tfstate-to-s3', (req, res) => {
   });
 });
 
-app.listen(3000, () => console.log('Backend API running on port 3000'));
-
 // Launch the web-based terminal
 app.post('/launch-terminal', (req, res) => {
   const cmd = 'npm start';
@@ -113,4 +117,4 @@ app.post('/launch-terminal', (req, res) => {
   });
 });
 
-app.listen(3000, () => console.log('Backend API running on port 3000'));
+app.listen(5000, () => console.log('Backend API running on port 5000'));
