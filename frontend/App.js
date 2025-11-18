@@ -1,19 +1,15 @@
 import React, { useState } from "react";
 import "./App.css";
 
-const BACKEND_BASE = "http://ip:port";   // change to your backend
-const ANSIBLE_LAB_URL = "http://ip:port";  // change to the real URL you want to open
-
 export default function App() {
   const [status, setStatus] = useState("");
   const [showSshButton, setShowSshButton] = useState(false);
-  const [sshUrl, setSshUrl] = useState(ANSIBLE_LAB_URL);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState(null);
 
   const uploadTFStateToS3Bucket = async () => {
     try {
-        const res = await fetch(`${BACKEND_BASE}/upload-tfstate-to-s3`, {
+        const res = await fetch("/api/upload-tfstate-to-s3", {
         method: "POST",
         });
 
@@ -35,7 +31,7 @@ export default function App() {
   setStatus("Fetching Terraform logs... ⏳");
 
   try {
-    const res = await fetch(`${BACKEND_BASE}/test-test`);
+    const res = await fetch("/api/print-tf-logs");
     const data = await res.json();
 
     if (res.ok) {
@@ -53,7 +49,7 @@ export default function App() {
     setStatus("Launching infrastructure... Please wait ⏳");
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_BASE}/launch`, { method: "POST" });
+      const res = await fetch("/api/launch", { method: "POST" });
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.status === "finished") {
@@ -88,7 +84,7 @@ export default function App() {
     setStatus("Destroying infrastructure... Please wait 🛑⏳");
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_BASE}/destroy`, { method: "POST" });
+      const res = await fetch("/api/destroy", { method: "POST" });
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.status === "finished") {

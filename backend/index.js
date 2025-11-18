@@ -1,12 +1,10 @@
 const express = require('express');
 const { exec } = require('child_process');
 const { spawn } = require('child_process');
-const path = require('path');
 const cors = require('cors');
 
 const app = express();
 const TERRAFORM_DIR = '/home/ubuntu/Ansible-labs-with-Terraform';
-const WEB_TERMINAL_DIR = '/home/ubuntu/webssh2';
 
 app.use(cors({
   origin: '*',
@@ -14,23 +12,11 @@ app.use(cors({
 }));
 
 // Example route to test the server
-app.get('/', (req, res) => {
+app.get('/api/', (req, res) => {
   res.send('Express server is running!');
 });
 
-// Test API endpoint
-app.get('/test', (req, res) => {
-  const cmd = 'cat terraform_logs.txt';
-
-  exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
-    if (err) {
-      return res.status(500).send({ error: err.message, stderr });
-    }
-    res.send({ output: stdout });
-  });
-});
-
-app.get('/test-test', (req, res) => {
+app.get('/api/print-tf-logs', (req, res) => {
   const fs = require("fs");
   const logFile = `${TERRAFORM_DIR}/terraform_logs.txt`;
 
@@ -65,7 +51,7 @@ app.get('/test-test', (req, res) => {
 });
 
 // Launch infrastructure
-app.post('/launch', (req, res) => {
+app.post('/api/launch', (req, res) => {
   let output = '';
 
   const terraform = spawn('bash', ['-c', 'terraform init && terraform apply -auto-approve'], { cwd: TERRAFORM_DIR });
@@ -102,7 +88,7 @@ app.post('/launch', (req, res) => {
 
 
 // Destroy infrastructure
-app.post('/destroy', (req, res) => {
+app.post('/api/destroy', (req, res) => {
   const terraform = spawn('bash', ['-c', 'terraform destroy -auto-approve'], { cwd: TERRAFORM_DIR });
 
   let output = '';
@@ -128,7 +114,7 @@ app.post('/destroy', (req, res) => {
 });
 
 // Upload terraform.tfstate to S3
-app.post('/upload-tfstate-to-s3', (req, res) => {
+app.post('/api/upload-tfstate-to-s3', (req, res) => {
   const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
 
   exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
@@ -138,17 +124,3 @@ app.post('/upload-tfstate-to-s3', (req, res) => {
     res.send({ output: stdout });
   });
 });
-
-// Launch the web-based terminal
-app.post('/launch-terminal', (req, res) => {
-  const cmd = 'npm start';
-
-  exec(cmd, { cwd: WEB_TERMINAL_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
-    if (err) {
-      return res.status(500).send({ error: err.message, stderr });
-    }
-    res.send({ output: stdout });
-  });
-});
-
-app.listen(5000, () => console.log('Backend API running on port 5000'));
