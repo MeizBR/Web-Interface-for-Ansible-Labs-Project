@@ -124,3 +124,5 @@ app.post('/api/upload-tfstate-to-s3', (req, res) => {
     res.send({ output: stdout });
   });
 });
+
+app.listen(5000, () => console.log('Backend API running on port 5000'));
