@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import "./App.css";
 
+const ANSIBLE_LAB_URL = "/terminal/ssh";
+
 export default function App() {
   const [status, setStatus] = useState("");
   const [showSshButton, setShowSshButton] = useState(false);
+  const [sshUrl, setSshUrl] = useState(ANSIBLE_LAB_URL);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState(null);
 
