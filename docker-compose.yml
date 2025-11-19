@@ -10,6 +10,14 @@ services:
     networks:
       - ans-labs-net
 
+  dind:
+    image: docker:24-dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=""
+    networks:
+      - ans-labs-net
+
   # backend
   backend:
     container_name: backend
@@ -20,14 +28,13 @@ services:
       - "5000:5000"
     depends_on:
       - web-based-terminal
+      - dind
     networks:
       - ans-labs-net
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - DOCKER_HOST=tcp://dind:2375
     volumes:
-      - ./Ansible-labs-with-Terraform:/home/node/Ansible-labs-with-Terraform
+      - ./Ansible-labs-with-Terraform:/app/Ansible-labs-with-Terraform
   
   # frontend
   frontend:
@@ -40,6 +47,7 @@ services:
     depends_on:
       - backend
       - web-based-terminal
+      - dind
     networks:
       - ans-labs-net
     volumes:

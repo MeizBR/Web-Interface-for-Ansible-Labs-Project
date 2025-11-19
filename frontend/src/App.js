@@ -10,26 +10,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState(null);
 
-  const uploadTFStateToS3Bucket = async () => {
-    try {
-        const res = await fetch("/api/upload-tfstate-to-s3", {
-        method: "POST",
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-        setStatus("File is uploaded to the AWS S3 bucket! 🚀");
-
-        } else {
-        setStatus("Failed to upload the file to AWS S3 bucket ❌");
-        }
-
-    } catch (err) {
-        setStatus("Could not reach backend ❌");
-    }
-  };
-
   const fetchTerraformLogs = async () => {
   setStatus("Fetching Terraform logs... ⏳");
 
@@ -59,9 +39,6 @@ export default function App() {
         setStatus("Infrastructure launched successfully! 🚀");
         // show SSH/button
         setShowSshButton(true);
-
-        // upload TF state to S3 bucket
-        await uploadTFStateToS3Bucket();
 
         // fetch and show terraform logs
         await fetchTerraformLogs();
