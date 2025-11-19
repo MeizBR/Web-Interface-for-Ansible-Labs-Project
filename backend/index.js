@@ -52,144 +52,133 @@ app.get('/api/print-tf-logs', (req, res) => {
 });
 
 // Launch infrastructure
-// app.post('/api/launch', (req, res) => {
-//   let output = '';
-
-//   const terraform = spawn('bash', ['-c', 'terraform init && terraform apply -auto-approve'], { cwd: TERRAFORM_DIR });
-
-//   terraform.stdout.on('data', (data) => {
-//     output += data.toString();
-//   });
-
-//   terraform.stderr.on('data', (data) => {
-//     output += data.toString();
-//   });
-
-//   terraform.on('error', (err) => {
-//     return res.status(500).send({ status: 'failed', error: err.message, output });
-//   });
-
-//   terraform.on('close', (code) => {
-//     if (code !== 0) {
-//       return res.status(500).send({ status: 'failed', output });
-//     }
-
-//     // Now run S3 upload
-//     const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
-//     exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
-//       if (err) {
-//         return res.status(500).send({ status: 'failed', error: err.message, stderr, output });
-//       }
-
-//       output += `\nS3 Upload Output:\n${stdout}\n${stderr}`;
-//       return res.send({ status: 'finished', output });
-//     });
-//   });
-// });
-
-
-// Destroy infrastructure
-// app.post('/api/destroy', (req, res) => {
-//   const terraform = spawn('bash', ['-c', 'terraform destroy -auto-approve'], { cwd: TERRAFORM_DIR });
-
-//   let output = '';
-
-//   terraform.stdout.on('data', (data) => {
-//     output += data.toString();
-//   });
-
-//   terraform.stderr.on('data', (data) => {
-//     output += data.toString();
-//   });
-
-//   terraform.on('close', (code) => {
-//     res.send({
-//       status: code === 0 ? 'finished' : 'failed',
-//       output
-//     });
-//   });
-
-//   terraform.on('error', (err) => {
-//     res.status(500).send({ error: err.message });
-//   });
-// });
-
-// Upload terraform.tfstate to S3
-app.post('/api/upload-tfstate-to-s3', (req, res) => {
-  const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
-
-  exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 500 }, (err, stdout, stderr) => {
-    if (err) {
-      return res.status(500).send({ error: err.message, stderr });
-    }
-    res.send({ output: stdout });
-  });
-});
-
-
-// Use these API endpoints if you want to run the app in Docker containers
-//Launch infrastructure
 app.post('/api/launch', (req, res) => {
   let output = '';
-  let responded = false; // prevent multiple sends
 
   const terraform = spawn('bash', ['-c', 'terraform init && terraform apply -auto-approve'], { cwd: TERRAFORM_DIR });
 
-  terraform.stdout.on('data', (data) => { output += data.toString(); });
-  terraform.stderr.on('data', (data) => { output += data.toString(); });
+  terraform.stdout.on('data', (data) => {
+    output += data.toString();
+  });
+
+  terraform.stderr.on('data', (data) => {
+    output += data.toString();
+  });
 
   terraform.on('error', (err) => {
-    if (!responded) {
-      responded = true;
-      return res.status(500).send({ status: 'failed', error: err.message, output });
-    }
+    return res.status(500).send({ status: 'failed', error: err.message, output });
   });
 
   terraform.on('close', (code) => {
-    if (responded) return;
     if (code !== 0) {
-      responded = true;
       return res.status(500).send({ status: 'failed', output });
     }
 
-    // S3 upload
+    // Now run S3 upload
     const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
     exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
-      if (!responded) {
-        responded = true;
-        if (err) {
-          return res.status(500).send({ status: 'failed', error: err.message, stderr, output });
-        }
-        output += `\nS3 Upload Output:\n${stdout}\n${stderr}`;
-        return res.send({ status: 'finished', output });
+      if (err) {
+        return res.status(500).send({ status: 'failed', error: err.message, stderr, output });
       }
+
+      output += `\nS3 Upload Output:\n${stdout}\n${stderr}`;
+      return res.send({ status: 'finished', output });
     });
   });
 });
 
+
 // Destroy infrastructure
 app.post('/api/destroy', (req, res) => {
-  let output = '';
-  let responded = false;
-
   const terraform = spawn('bash', ['-c', 'terraform destroy -auto-approve'], { cwd: TERRAFORM_DIR });
 
-  terraform.stdout.on('data', data => { output += data.toString(); });
-  terraform.stderr.on('data', data => { output += data.toString(); });
+  let output = '';
 
-  terraform.on('error', err => {
-    if (!responded) {
-      responded = true;
-      res.status(500).send({ status: 'failed', error: err.message });
-    }
+  terraform.stdout.on('data', (data) => {
+    output += data.toString();
   });
 
-  terraform.on('close', code => {
-    if (!responded) {
-      responded = true;
-      res.send({ status: code === 0 ? 'finished' : 'failed', output });
-    }
+  terraform.stderr.on('data', (data) => {
+    output += data.toString();
+  });
+
+  terraform.on('close', (code) => {
+    res.send({
+      status: code === 0 ? 'finished' : 'failed',
+      output
+    });
+  });
+
+  terraform.on('error', (err) => {
+    res.status(500).send({ error: err.message });
   });
 });
+
+
+// ! NOT IMPORTANT !
+// Use these API endpoints if you want to run the app in Docker containers
+//Launch infrastructure
+// app.post('/api/launch', (req, res) => {
+//   let output = '';
+//   let responded = false; // prevent multiple sends
+
+//   const terraform = spawn('bash', ['-c', 'terraform init && terraform apply -auto-approve'], { cwd: TERRAFORM_DIR });
+
+//   terraform.stdout.on('data', (data) => { output += data.toString(); });
+//   terraform.stderr.on('data', (data) => { output += data.toString(); });
+
+//   terraform.on('error', (err) => {
+//     if (!responded) {
+//       responded = true;
+//       return res.status(500).send({ status: 'failed', error: err.message, output });
+//     }
+//   });
+
+//   terraform.on('close', (code) => {
+//     if (responded) return;
+//     if (code !== 0) {
+//       responded = true;
+//       return res.status(500).send({ status: 'failed', output });
+//     }
+
+//     // S3 upload
+//     const cmd = 'aws s3 cp terraform.tfstate s3://ansible-labs/terraform.tfstate';
+//     exec(cmd, { cwd: TERRAFORM_DIR, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+//       if (!responded) {
+//         responded = true;
+//         if (err) {
+//           return res.status(500).send({ status: 'failed', error: err.message, stderr, output });
+//         }
+//         output += `\nS3 Upload Output:\n${stdout}\n${stderr}`;
+//         return res.send({ status: 'finished', output });
+//       }
+//     });
+//   });
+// });
+
+// Destroy infrastructure
+// app.post('/api/destroy', (req, res) => {
+//   let output = '';
+//   let responded = false;
+
+//   const terraform = spawn('bash', ['-c', 'terraform destroy -auto-approve'], { cwd: TERRAFORM_DIR });
+
+//   terraform.stdout.on('data', data => { output += data.toString(); });
+//   terraform.stderr.on('data', data => { output += data.toString(); });
+
+//   terraform.on('error', err => {
+//     if (!responded) {
+//       responded = true;
+//       res.status(500).send({ status: 'failed', error: err.message });
+//     }
+//   });
+
+//   terraform.on('close', code => {
+//     if (!responded) {
+//       responded = true;
+//       res.send({ status: code === 0 ? 'finished' : 'failed', output });
+//     }
+//   });
+// });
 
 app.listen(5000, () => console.log('Backend API running on port 5000'));

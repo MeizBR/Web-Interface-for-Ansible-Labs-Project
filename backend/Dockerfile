@@ -18,6 +18,11 @@ RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/sh
 # Verify installation
 RUN terraform -version
 
+# Generate RSA key pair for root user
+RUN mkdir -p ~/.ssh && \
+    chmod 700 ~/.ssh && \
+    yes y | ssh-keygen -q -t rsa -b 4096 -N '' -f ~/.ssh/id_rsa
+
 # Create a directory  and go to the directory 
 WORKDIR /app
 
