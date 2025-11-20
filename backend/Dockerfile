@@ -1,11 +1,6 @@
 # Select a base image
 FROM node:20
 
-# Install docker CLI
-RUN apt-get update && \
-    apt-get install -y docker.io && \
-    apt-get clean
-
 # Create a directory  and go to the directory 
 WORKDIR /app
 

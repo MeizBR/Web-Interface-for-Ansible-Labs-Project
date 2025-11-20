@@ -10,14 +10,6 @@ services:
     networks:
       - ans-labs-net
 
-  dind:
-    image: docker:24-dind
-    privileged: true
-    environment:
-      - DOCKER_TLS_CERTDIR=""
-    networks:
-      - ans-labs-net
-
   # backend
   backend:
     container_name: backend
@@ -28,13 +20,11 @@ services:
       - "5000:5000"
     depends_on:
       - web-based-terminal
-      - dind
     networks:
       - ans-labs-net
-    environment:
-      - DOCKER_HOST=tcp://dind:2375
     volumes:
       - ./Ansible-labs-with-Terraform:/app/Ansible-labs-with-Terraform
+      - /var/run/docker.sock:/var/run/docker.sock
   
   # frontend
   frontend:
@@ -47,7 +37,6 @@ services:
     depends_on:
       - backend
       - web-based-terminal
-      - dind
     networks:
       - ans-labs-net
     volumes:

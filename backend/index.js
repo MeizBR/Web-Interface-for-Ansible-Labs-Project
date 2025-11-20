@@ -7,10 +7,32 @@ const app = express();
 const TERRAFORM_DIR = path.join(__dirname, './Ansible-labs-with-Terraform');
 const envFile = path.join(__dirname, '.env');
 
+const { runTerraformDocker } = require('./utils/terraform.js')
+
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST']
 }));
+
+async function initializeTerraform() {
+  console.log("🔧 Initializing Terraform...");
+
+  const dockerArgs = [
+    'run', '--rm', '-i',
+    '--env-file', envFile,
+    '-v', `${TERRAFORM_DIR}:/app`,
+    'meiezbr/terraform-project:latest',
+    'init'
+  ];
+
+  const result = await runTerraformDocker(dockerArgs);
+
+  if (result.code !== 0) {
+    console.error("❌ Terraform init failed:\n", result.output);
+  } else {
+    console.log("✅ Terraform initialized successfully");
+  }
+}
 
 // Example route to test the server
 app.get('/api/', (req, res) => {
@@ -128,4 +150,8 @@ app.post('/api/destroy', (req, res) => {
   });
 });
 
-app.listen(5000, () => console.log('Backend API running on port 5000'));
+app.listen(5000, async () => {
+  console.log(`🚀 Backend server running on port 5000`);
+
+  await initializeTerraform();  // run on startup
+});
