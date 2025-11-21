@@ -2,11 +2,29 @@ version: "3.9"
 
 services:
 
+  # dind
+  dind:
+    image: docker:27.0.3-dind
+    container_name: dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: "" 
+    command: dockerd -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
+    ports:
+      - "2375:2375"
+    networks:
+      - ans-labs-net
+    volumes:
+      - ./Ansible-labs-with-Terraform:/app/Ansible-labs-with-Terraform
+
+  # web-based terminal
   web-based-terminal:
     container_name: web-based-terminal
     image: ghcr.io/billchurch/webssh2:latest
     ports:
       - "2222:2222"
+    depends_on:
+      - dind
     networks:
       - ans-labs-net
 
@@ -20,11 +38,13 @@ services:
       - "5000:5000"
     depends_on:
       - web-based-terminal
+      - dind
     networks:
       - ans-labs-net
+    environment:
+      DOCKER_HOST: tcp://dind:2375
     volumes:
       - ./Ansible-labs-with-Terraform:/app/Ansible-labs-with-Terraform
-      - /var/run/docker.sock:/var/run/docker.sock
   
   # frontend
   frontend:
@@ -37,6 +57,7 @@ services:
     depends_on:
       - backend
       - web-based-terminal
+      - dind
     networks:
       - ans-labs-net
     volumes:
