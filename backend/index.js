@@ -14,6 +14,8 @@ app.use(cors({
   methods: ['GET', 'POST']
 }));
 
+let terraformReady = false;
+
 async function initializeTerraform() {
   console.log("🔧 Initializing Terraform...");
 
@@ -31,8 +33,15 @@ async function initializeTerraform() {
     console.error("❌ Terraform init failed:\n", result.output);
   } else {
     console.log("✅ Terraform initialized successfully");
+    terraformReady = true;
   }
 }
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  if (terraformReady) res.status(200).send("OK");
+  else res.status(503).send("Not Ready");
+});
 
 // Example route to test the server
 app.get('/api/', (req, res) => {
