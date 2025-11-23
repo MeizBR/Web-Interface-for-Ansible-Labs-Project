@@ -2,6 +2,18 @@ version: "3.9"
 
 services:
 
+  # traefik
+  traefik:
+    image: traefik:v2.10.7
+    networks:
+      - ans-labs-net
+    ports:
+      - "85:85"
+      - 8082:8082
+    volumes:
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
   # dind
   dind:
     image: docker:27.0.3-dind
@@ -40,6 +52,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./backend
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.api-redirect.entryPoints=web"
+    - "traefik.http.routers.api-redirect.rule=PathPrefix(`/api`)"
+    - "traefik.http.services.nodeapp-service.loadBalancer.server.port=5000"
     ports:
       - "5000:5000"
     depends_on:
@@ -70,7 +87,7 @@ services:
       - "80:80"
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
       web-based-terminal:
         condition: service_started
       dind:
@@ -81,6 +98,70 @@ services:
       - ./frontend/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend/nginx/cors.conf:/etc/nginx/cors.conf:ro
       - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  # node exporter
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /:/host:ro,rslave
+    command:
+      - "--path.rootfs=/host"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    networks:
+      - ans-labs-net
+    restart: always
+
+  # cAdvisor
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+    - 8080:8080
+    networks:
+      - ans-labs-net
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  # prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+    - 9090:9090
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - ans-labs-net
+    volumes:
+    - ./prometheus:/etc/prometheus
+    - prom_data:/prometheus
+
+  # grafana
+  grafana:
+    image: grafana/grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - 3000:3000
+    networks:
+      - ans-labs-net
+
+volumes:
+  prom_data:
 
 networks:
   ans-labs-net:
