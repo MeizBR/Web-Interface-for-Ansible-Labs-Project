@@ -2,18 +2,6 @@ version: "3.9"
 
 services:
 
-  # traefik
-  traefik:
-    image: traefik:v2.10.7
-    networks:
-      - ans-labs-net
-    ports:
-      - "85:85"
-      - 8082:8082
-    volumes:
-      - ./traefik.yml:/etc/traefik/traefik.yml
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
   # dind
   dind:
     image: docker:27.0.3-dind
@@ -52,11 +40,6 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./backend
-    labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.api-redirect.entryPoints=web"
-    - "traefik.http.routers.api-redirect.rule=PathPrefix(`/api`)"
-    - "traefik.http.services.nodeapp-service.loadBalancer.server.port=5000"
     ports:
       - "5000:5000"
     depends_on:
